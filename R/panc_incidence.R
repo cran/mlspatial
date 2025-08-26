@@ -1,0 +1,31 @@
+#' Pancreatic Cancer Incidence Data
+#'
+#' This dataset contains pancreatic cancer incidence rates across African countries.
+#'
+#' @format A data frame with the following variables:
+#' \describe{
+#'   \item{NAME}{Character. Name of the country.}
+#'   \item{incidence}{Double. Incidence rate per 100,000 population.}
+#'   \item{female}{Double. Female pancreatic cancer patients.}
+#'   \item{male}{Double. Male pancreatic cancer patients.}
+#'   \item{ageb}{Double. Patients age between 20-54 years.}
+#'   \item{agec}{Double. Patients age above 55 years.}
+#'   \item{agea}{Double. Patients age below 20 years.}
+#'   \item{fageb}{Double. Female patients age between 20-54 years.}
+#'   \item{fagec}{Double. Female patients age above 55 years.}
+#'   \item{fagea}{Double. Female patients age below 20 years.}
+#'   \item{mageb}{Double. Male patients age between 20-54 years.}
+#'   \item{magec}{Double. Male patients age above 55 years.}
+#'   \item{magea}{Double. Male patients age below 20 years.}
+#'   \item{yra}{Double. Incidence rate in year 2017.}
+#'   \item{yrb}{Double. Incidence rate in year 2018.}
+#'   \item{yrc}{Double. Incidence rate in year 2019.}
+#'   \item{yrd}{Double. Incidence rate in year 2020.}
+#'   \item{yre}{Double. Incidence rate in year 2021.}
+#' }
+#'
+#' @source Global Burden of Disease (GBD) 2021 estimates, Seattle, United States https://vizhub.healthdata.org/gbd-results/
+#' @usage data(panc_incidence)
+#' @keywords datasets
+#'
+"panc_incidence"
