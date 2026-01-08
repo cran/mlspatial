@@ -1,5 +1,10 @@
 ## ----include = FALSE----------------------------------------------------------
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>", echo = TRUE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE
+)
 
 ## -----------------------------------------------------------------------------
 olddir <- getwd()
@@ -44,7 +49,6 @@ ggplot(africa_shp) +
 ## -----------------------------------------------------------------------------
 # Join data
 mapdata <- join_data(africa_shp, panc_incidence, by = "NAME")
-
 
 ## OR Joining/ merging my data and shapefiles
 mapdata <- inner_join(africa_shp, panc_incidence, by = "NAME")   
@@ -109,7 +113,6 @@ tmap_arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12,
              widths = c(.75, .75))
 tmap_mode(current.mode)
 
-
 ## -----------------------------------------------------------------------------
 ## Machine Learning Model building
 # 1. Random Forest Regression
@@ -144,13 +147,19 @@ y <- mapdata$incidence
 dtrain <- xgb.DMatrix(data = x_vars, label = y)
 
 # Train model
-xgb_model <- xgboost(data = dtrain, 
-                     objective = "reg:squarederror", 
-                     nrounds = 100,
-                     max_depth = 4,
-                     eta = 0.1,
-                     verbose = 0)
+# Train model using xgb.train()
+params <- list(
+  objective = "reg:squarederror",
+  max_depth = 4,
+  learning_rate = 0.1,
+  verbosity = 0
+)
 
+xgb_model <- xgb.train(
+  params = params,
+  data = dtrain,
+  nrounds = 100
+)
 # Feature importance
 xgb.importance(model = xgb_model)
 
@@ -274,15 +283,14 @@ p3 <- ggplot(mapdata, aes(x = incidence, y = svr_pred)) +
 
 combined_plot <- ggarrange(p1, p2, p3, ncol = 3, nrow = 1, common.legend = FALSE)
 
-
 ## -----------------------------------------------------------------------------
 ## CROSS-VALIDATION
 #Step 1: Prepare common setup
 # Set seed for reproducibility
 set.seed(123)
-
+library(caret)
 # Define 5-fold cross-validation
-cv_control <- trainControl(method = "cv", number = 5)
+cv_control <- trainControl(method = "cv", number = 3)
 
 # 1. Random Forest
 library(randomForest)
@@ -300,16 +308,31 @@ print(rf_cv)
 
 # 2. XGBoost
 library(xgboost)
+mapdata <- st_drop_geometry(mapdata)
+mapdata$incidence <- as.numeric(mapdata$incidence)
 
-xgb_cv <- train(
-  incidence ~ female + male + agea + ageb + agec + fagea + fageb + fagec +
-    magea + mageb + magec + yrb + yrc + yrd + yre,
-  data = mapdata,
-  method = "xgbTree",
-  trControl = cv_control,
-  tuneLength = 3
+cv_control <- trainControl(
+  method = "cv",
+  number = 5
+)
+
+# XGBoost with caret
+xgb_cv <- xgb.cv(
+  params = params,
+  data = dtrain,
+  nrounds = 100,
+  nfold = 5,           # 5-fold CV
+  early_stopping_rounds = 10, # stop if no improvement in 10 rounds
+  metrics = list("rmse"),
+  verbose = 0
 )
 print(xgb_cv)
+best_nrounds <- xgb_cv$best_iteration
+cat("Best number of rounds:", best_nrounds, "\n")
+# Extract mean RMSE
+mean_rmse <- min(xgb_cv$evaluation_log$test_rmse_mean)
+cat("XGBoost CV RMSE:", mean_rmse, "\n")
+
 
 # 3. Support Vector Regression (SVR)
 library(e1071)
@@ -326,23 +349,10 @@ svr_cv <- train(
 )
 print(svr_cv)
 
-
-# Compare All Models (from CV)
-results <- resamples(list(
-  RF = rf_cv,
-  XGB = xgb_cv,
-  SVR = svr_cv
-))
-
-# Summary of RMSE, MAE, Rsquared
-summary(results)
-
-# Boxplot of performance
-bwplot(results)
-
 ## -----------------------------------------------------------------------------
 ## Spatial maps of predicted values of each model
 # 1. Random Forest Spatial Map
+mapdata <- inner_join(africa_shp, panc_incidence, by = "NAME")
 mapdata$pred_rf <- predict(rf_model, newdata = mapdata)
 
 tm_shape(mapdata) + 
@@ -387,8 +397,7 @@ tmap_arrange(
             fill.legend = tm_legend(title = "Inci_pred_svr")) + tm_borders(fill_alpha = .2) + 
     tm_compass() + tm_layout(legend.text.size = 0.5, legend.position = c("left", "bottom"), 
                              frame = TRUE, component.autoscale = FALSE),
-  nrow = 1
-)
+  nrow = 1)
 
 ## -----------------------------------------------------------------------------
 # Predicted Residuals

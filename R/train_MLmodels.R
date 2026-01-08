@@ -35,7 +35,7 @@ train_rf <- function(data, formula, ntree = 500, seed = 123) {
 #' @param formula A formula defining the model structure.
 #' @param nrounds Number of boosting iterations.
 #' @param max_depth Maximum tree depth.
-#' @param eta Learning rate.
+#' @param learning_rate Learning rate for boosting.
 #'
 #' @return A trained xgboost model object.
 #' @importFrom xgboost xgb.DMatrix xgboost
@@ -57,18 +57,27 @@ train_rf <- function(data, formula, ntree = 500, seed = 123) {
 #' print(xgb_model)
 #' }
 #' @export
-train_xgb <- function(data, formula, nrounds = 100, max_depth = 4, eta = 0.1) {
-  x <- model.matrix(formula, data = data)[, -1]
-  label <- eval(formula[[2]], data)
-  dtrain <- xgboost::xgb.DMatrix(x, label = label)
-  xgboost::xgboost(
+train_xgb <- function(data, formula, nrounds = 100, max_depth = 4, learning_rate = 0.1) {
+  # Prepare data
+  x <- model.matrix(formula, data)[, -1]
+  y <- data[[as.character(formula[[2]])]]  # cleaner extraction of target
+
+  # Convert to DMatrix
+  dtrain <- xgboost::xgb.DMatrix(data = x, label = y)
+
+  # Train model
+  xgboost::xgb.train(
     data = dtrain,
-    objective = "reg:squarederror",
-    nrounds = nrounds,
-    max_depth = max_depth,
-    eta = eta,
-    verbose = 0)
+    params = list(
+      objective = "reg:squarederror",
+      max_depth = max_depth,
+      learning_rate = learning_rate,
+      verbosity = 0
+    ),
+    nrounds = nrounds
+  )
 }
+
 
 
 #' Train Support

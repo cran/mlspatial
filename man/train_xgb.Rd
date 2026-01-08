@@ -4,7 +4,7 @@
 \alias{train_xgb}
 \title{Train XGBoost model}
 \usage{
-train_xgb(data, formula, nrounds = 100, max_depth = 4, eta = 0.1)
+train_xgb(data, formula, nrounds = 100, max_depth = 4, learning_rate = 0.1)
 }
 \arguments{
 \item{data}{A data frame with the training data.}
@@ -15,7 +15,7 @@ train_xgb(data, formula, nrounds = 100, max_depth = 4, eta = 0.1)
 
 \item{max_depth}{Maximum tree depth.}
 
-\item{eta}{Learning rate.}
+\item{learning_rate}{Learning rate for boosting.}
 }
 \value{
 A trained xgboost model object.
